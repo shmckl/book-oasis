@@ -13,3 +13,34 @@ GET http://localhost:8080/api/books/1
 
 ### Get a book that does not exist
 GET http://localhost:8080/api/books/999
+
+
+### Create a few more books for paging
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{ "title": "Enterprise Integration Patterns", "author": "Gregor Hohpe", "publicationYear": 2003 }
+
+### Another
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{ "title": "The Pragmatic Programmer", "author": "Andrew Hunt", "publicationYear": 1999 }
+
+### Another
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{ "title": "Clean Code", "author": "Robert Martin", "publicationYear": 2008 }
+
+### List all books, default paging
+GET http://localhost:8080/api/books
+
+### First page, two per page
+GET http://localhost:8080/api/books?page=0&size=2
+
+### Second page, two per page
+GET http://localhost:8080/api/books?page=1&size=2
+
+### Sorted by publication year, newest first
+GET http://localhost:8080/api/books?sort=publicationYear,desc

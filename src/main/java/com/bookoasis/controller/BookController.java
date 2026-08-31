@@ -2,7 +2,10 @@ package com.bookoasis.controller;
 
 import com.bookoasis.dto.BookRequest;
 import com.bookoasis.dto.BookResponse;
+import com.bookoasis.dto.PagedResponse;
 import com.bookoasis.service.BookService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,5 +39,11 @@ public class BookController {
         return bookService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    public ResponseEntity<PagedResponse<BookResponse>> getAll(
+            @PageableDefault(size = 10, sort = "title") Pageable pageable) {
+        return ResponseEntity.ok(bookService.findAll(pageable));
     }
 }
