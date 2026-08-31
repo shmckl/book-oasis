@@ -34,6 +34,25 @@ It defaults to 10 books per page sorted by title, and page size is capped at 100
 The response includes the page contents plus `page`, `size`, `totalElements`,
 `totalPages`, `first` and `last` so a client can build paging controls.
 
+### Validation
+
+Book requests are validated at the API boundary. Titles and authors must not be
+blank and are capped at 255 characters, and the publication year must be present
+and between 1450 and 2100 so an obvious typo is caught rather than stored.
+
+Invalid requests return `400 Bad Request` listing every problem found, not just
+the first:
+
+    {
+      "timestamp": "2026-08-31T18:04:11.238Z",
+      "status": 400,
+      "message": "Validation failed",
+      "fieldErrors": [
+        { "field": "title", "message": "Title is required" },
+        { "field": "publicationYear", "message": "Publication year must be 2100 or earlier" }
+      ]
+    }
+
 ### Example
 
     POST /api/books
@@ -83,21 +102,26 @@ without a Spring context.
 first time on any machine. Data does not survive a restart, which is fine
 for review purposes.
 
+**Validation at the boundary.** Constraints live on the request DTO and are
+rejected by a `@RestControllerAdvice` before reaching the service layer, so
+business logic can assume its input is well formed. Database `nullable = false`
+constraints remain as a last line of defence.
+
 ## Testing
 
 - `BookRepositoryTest` uses `@DataJpaTest` to verify the JPA mapping against a real database.
 - `BookServiceTest` uses Mockito to cover the business logic, including the not-found paths.
+- `BookControllerTest` uses `@WebMvcTest` to verify status codes, headers, JSON shape
+  and that invalid requests never reach the service.
 
 ## What I would do next
 
 Given more time, in this order:
 
-1. **Request validation.** Reject blank titles and implausible publication
-   years at the API boundary with a clear 400 response.
-2. **Consistent error responses.** A `@RestControllerAdvice` returning a
-   structured error body rather than empty 404s.
-3. **Controller tests** with `@WebMvcTest` to verify status codes, headers
-   and JSON shape.
-4. **Flyway migrations** instead of `hibernate.ddl-auto`, so schema changes
-   are versioned and reviewable.
-5. **A persistent database** and container packaging for real deployment.
+1. **A dedicated not-found exception** so a missing book returns a structured
+   error body consistent with validation failures, rather than an empty 404.
+2. **Flyway migrations** instead of `hibernate.ddl-auto`, so schema changes are
+   versioned and reviewable.
+3. **Search and filtering** on the listing endpoint, by author or title, which is
+   the natural next thing a bookshop owner asks for.
+4. **A persistent database** and container packaging for real deployment.
