@@ -124,3 +124,14 @@ Content-Type: application/json
   "author": "",
   "publicationYear": null
 }
+
+
+### Malformed JSON body
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Atomic Habits",
+  "author": "James Clear",
+  "publicationYear": "two thousand and eighteen"
+}

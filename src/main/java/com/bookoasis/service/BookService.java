@@ -3,13 +3,12 @@ package com.bookoasis.service;
 import com.bookoasis.dto.BookRequest;
 import com.bookoasis.dto.BookResponse;
 import com.bookoasis.dto.PagedResponse;
+import com.bookoasis.exception.BookNotFoundException;
 import com.bookoasis.model.BookEntity;
 import com.bookoasis.repository.BookRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 public class BookService {
@@ -31,8 +30,10 @@ public class BookService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<BookResponse> findById(Long id) {
-        return bookRepository.findById(id).map(BookResponse::from);
+    public BookResponse findById(Long id) {
+        return bookRepository.findById(id)
+                .map(BookResponse::from)
+                .orElseThrow(() -> new BookNotFoundException(id));
     }
 
     @Transactional(readOnly = true)
@@ -41,22 +42,22 @@ public class BookService {
     }
 
     @Transactional
-    public Optional<BookResponse> update(Long id, BookRequest request) {
-        return bookRepository.findById(id)
-                .map(entity -> {
-                    entity.setTitle(request.title());
-                    entity.setAuthor(request.author());
-                    entity.setPublicationYear(request.publicationYear());
-                    return BookResponse.from(bookRepository.save(entity));
-                });
+    public BookResponse update(Long id, BookRequest request) {
+        BookEntity entity = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException(id));
+
+        entity.setTitle(request.title());
+        entity.setAuthor(request.author());
+        entity.setPublicationYear(request.publicationYear());
+
+        return BookResponse.from(bookRepository.save(entity));
     }
 
     @Transactional
-    public boolean delete(Long id) {
+    public void delete(Long id) {
         if (!bookRepository.existsById(id)) {
-            return false;
+            throw new BookNotFoundException(id);
         }
         bookRepository.deleteById(id);
-        return true;
     }
 }

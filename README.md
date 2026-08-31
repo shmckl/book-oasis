@@ -16,13 +16,13 @@ Run the tests with:
 
 ## Endpoints
 
-| Method | Path | Description | Success | Not found |
-|---|---|---|---|---|
-| POST | `/api/books` | Add a new book | 201 + `Location` | |
-| GET | `/api/books/{id}` | Retrieve one book | 200 | 404 |
-| GET | `/api/books` | View all books, paginated | 200 | |
-| PUT | `/api/books/{id}` | Amend a book | 200 | 404 |
-| DELETE | `/api/books/{id}` | Remove a book | 204 | 404 |
+| Method | Path | Description | Success | Not found | Invalid |
+|---|---|---|---|---|---|
+| POST | `/api/books` | Add a new book | 201 + `Location` | | 400 |
+| GET | `/api/books/{id}` | Retrieve one book | 200 | 404 | |
+| GET | `/api/books` | View all books, paginated | 200 | | |
+| PUT | `/api/books/{id}` | Amend a book | 200 | 404 | 400 |
+| DELETE | `/api/books/{id}` | Remove a book | 204 | 404 | |
 
 ### Pagination
 
@@ -40,8 +40,10 @@ Book requests are validated at the API boundary. Titles and authors must not be
 blank and are capped at 255 characters, and the publication year must be present
 and between 1450 and 2100 so an obvious typo is caught rather than stored.
 
-Invalid requests return `400 Bad Request` listing every problem found, not just
-the first:
+### Errors
+
+All errors share one response format. Validation failures list every problem
+found, not just the first:
 
     {
       "timestamp": "2026-08-31T18:04:11.238Z",
@@ -52,6 +54,18 @@ the first:
         { "field": "publicationYear", "message": "Publication year must be 2100 or earlier" }
       ]
     }
+
+A request for a book that does not exist returns the same shape without
+`fieldErrors`:
+
+    {
+      "timestamp": "2026-08-31T22:10:52.114Z",
+      "status": 404,
+      "message": "Book not found with id 999"
+    }
+
+A malformed or missing request body returns 400 with a generic message rather
+than the parser's internal detail.
 
 ### Example
 
@@ -73,7 +87,8 @@ Returns `201 Created` with a `Location` header of `/api/books/1` and:
       "publicationYear": 2018
     }
 
-`requests.http` in the project root contains runnable examples of every endpoint.
+`requests.http` in the project root contains runnable examples of every endpoint,
+including the failure cases.
 
 ## Design decisions
 
@@ -94,6 +109,16 @@ paging structure instead of leaking framework internals.
 the server replaces it. PATCH would need rules for distinguishing an absent
 field from a null one, which is more complexity than this case needs.
 
+**Validation at the boundary.** Constraints live on the request DTO and are
+rejected before reaching the service layer, so business logic can assume its
+input is well-formed. The database `nullable = false` constraints remain as a
+last line of defence.
+
+**Domain exceptions rather than `Optional` returns.** The service throws
+`BookNotFoundException` and a single `@RestControllerAdvice` maps it to a 404,
+so the service layer holds no HTTP concerns and every error response shares
+one format.
+
 **Constructor injection throughout.** Dependencies are final, the class
 cannot be constructed in an invalid state, and services can be unit tested
 without a Spring context.
@@ -101,11 +126,6 @@ without a Spring context.
 **H2 in-memory database.** No installation required, so the project runs
 first time on any machine. Data does not survive a restart, which is fine
 for review purposes.
-
-**Validation at the boundary.** Constraints live on the request DTO and are
-rejected by a `@RestControllerAdvice` before reaching the service layer, so
-business logic can assume its input is well formed. Database `nullable = false`
-constraints remain as a last line of defence.
 
 ## Testing
 
@@ -118,10 +138,11 @@ constraints remain as a last line of defence.
 
 Given more time, in this order:
 
-1. **A dedicated not-found exception** so a missing book returns a structured
-   error body consistent with validation failures, rather than an empty 404.
-2. **Flyway migrations** instead of `hibernate.ddl-auto`, so schema changes are
-   versioned and reviewable.
-3. **Search and filtering** on the listing endpoint, by author or title, which is
-   the natural next thing a bookshop owner asks for.
+1. **A full integration test** with `@SpringBootTest` running a create, read,
+   update and delete cycle through the whole stack, to prove the layers work
+   together rather than only in isolation.
+2. **Flyway migrations** instead of `hibernate.ddl-auto`, so schema changes
+   are versioned and reviewable.
+3. **Search and filtering** on the listing endpoint, by author or title, which
+   is the natural next thing a bookshop owner asks for.
 4. **A persistent database** and container packaging for real deployment.

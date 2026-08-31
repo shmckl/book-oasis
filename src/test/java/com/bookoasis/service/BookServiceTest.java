@@ -3,6 +3,7 @@ package com.bookoasis.service;
 import com.bookoasis.dto.BookRequest;
 import com.bookoasis.dto.BookResponse;
 import com.bookoasis.dto.PagedResponse;
+import com.bookoasis.exception.BookNotFoundException;
 import com.bookoasis.model.BookEntity;
 import com.bookoasis.repository.BookRepository;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -55,18 +57,19 @@ class BookServiceTest {
         ReflectionTestUtils.setField(entity, "id", 1L);
         when(bookRepository.findById(1L)).thenReturn(Optional.of(entity));
 
-        Optional<BookResponse> result = bookService.findById(1L);
+        BookResponse result = bookService.findById(1L);
 
-        assertThat(result).isPresent();
-        assertThat(result.get().id()).isEqualTo(1L);
-        assertThat(result.get().title()).isEqualTo("Atomic Habits");
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(result.title()).isEqualTo("Atomic Habits");
     }
 
     @Test
-    void returnsEmptyWhenBookDoesNotExist() {
+    void throwsWhenBookDoesNotExist() {
         when(bookRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThat(bookService.findById(999L)).isEmpty();
+        assertThatThrownBy(() -> bookService.findById(999L))
+                .isInstanceOf(BookNotFoundException.class)
+                .hasMessageContaining("999");
     }
 
     @Test
@@ -100,22 +103,21 @@ class BookServiceTest {
         when(bookRepository.save(any(BookEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Optional<BookResponse> result = bookService.update(
+        BookResponse result = bookService.update(
                 1L, new BookRequest("Clean Code", "Robert C. Martin", 2008));
 
-        assertThat(result).isPresent();
-        assertThat(result.get().author()).isEqualTo("Robert C. Martin");
+        assertThat(result.author()).isEqualTo("Robert C. Martin");
         assertThat(entity.getAuthor()).isEqualTo("Robert C. Martin");
     }
 
     @Test
-    void returnsEmptyWhenUpdatingABookThatDoesNotExist() {
+    void throwsWhenUpdatingABookThatDoesNotExist() {
         when(bookRepository.findById(999L)).thenReturn(Optional.empty());
 
-        Optional<BookResponse> result = bookService.update(
-                999L, new BookRequest("Nothing", "Nobody", 2000));
+        assertThatThrownBy(() -> bookService.update(
+                999L, new BookRequest("Nothing", "Nobody", 2000)))
+                .isInstanceOf(BookNotFoundException.class);
 
-        assertThat(result).isEmpty();
         verify(bookRepository, never()).save(any(BookEntity.class));
     }
 
@@ -123,16 +125,17 @@ class BookServiceTest {
     void deletesAnExistingBook() {
         when(bookRepository.existsById(1L)).thenReturn(true);
 
-        assertThat(bookService.delete(1L)).isTrue();
+        bookService.delete(1L);
 
         verify(bookRepository).deleteById(1L);
     }
 
     @Test
-    void doesNotDeleteABookThatDoesNotExist() {
+    void throwsWhenDeletingABookThatDoesNotExist() {
         when(bookRepository.existsById(999L)).thenReturn(false);
 
-        assertThat(bookService.delete(999L)).isFalse();
+        assertThatThrownBy(() -> bookService.delete(999L))
+                .isInstanceOf(BookNotFoundException.class);
 
         verify(bookRepository, never()).deleteById(anyLong());
     }

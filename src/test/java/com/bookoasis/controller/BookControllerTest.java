@@ -1,6 +1,7 @@
 package com.bookoasis.controller;
 
 import com.bookoasis.dto.BookResponse;
+import com.bookoasis.exception.BookNotFoundException;
 import com.bookoasis.service.BookService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -76,5 +78,16 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("publicationYear"));
 
         verify(bookService, never()).create(any());
+    }
+
+    @Test
+    void returnsAStructuredBodyWhenBookNotFound() throws Exception {
+        when(bookService.findById(999L)).thenThrow(new BookNotFoundException(999L));
+
+        mockMvc.perform(get("/api/books/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Book not found with id 999"))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }
