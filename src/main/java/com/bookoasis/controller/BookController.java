@@ -4,6 +4,7 @@ import com.bookoasis.dto.BookRequest;
 import com.bookoasis.dto.BookResponse;
 import com.bookoasis.dto.PagedResponse;
 import com.bookoasis.service.BookService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class BookController {
     }
 
     @PostMapping
-    public ResponseEntity<BookResponse> create(@RequestBody BookRequest request) {
+    public ResponseEntity<BookResponse> create(@Valid @RequestBody BookRequest request) {
         BookResponse created = bookService.create(request);
         return ResponseEntity
                 .created(URI.create("/api/books/" + created.id()))
@@ -44,7 +45,7 @@ public class BookController {
 
     @PutMapping("/{id}")
     public ResponseEntity<BookResponse> update(@PathVariable Long id,
-                                               @RequestBody BookRequest request) {
+                                               @Valid @RequestBody BookRequest request) {
         return bookService.update(id, request)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

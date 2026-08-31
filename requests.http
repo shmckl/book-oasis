@@ -19,25 +19,41 @@ GET http://localhost:8080/api/books/999
 POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "title": "Enterprise Integration Patterns", "author": "Gregor Hohpe", "publicationYear": 2003 }
+{
+  "title": "Enterprise Integration Patterns",
+  "author": "Gregor Hohpe",
+  "publicationYear": 2003
+}
 
 ### Another
 POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "title": "The Pragmatic Programmer", "author": "Andrew Hunt", "publicationYear": 1999 }
+{
+  "title": "The Pragmatic Programmer",
+  "author": "Andrew Hunt",
+  "publicationYear": 1999
+}
 
 ### Another
 POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "title": "Clean Code", "author": "Robert Martin", "publicationYear": 2008 }
+{
+  "title": "Clean Code",
+  "author": "Robert Martin",
+  "publicationYear": 2008
+}
 
 ### Another
 POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "title": "Design Patterns", "author": "Erich Gamma", "publicationYear": 1994 }
+{
+  "title": "Design Patterns",
+  "author": "Erich Gamma",
+  "publicationYear": 1994
+}
 
 ### List all books, default paging
 GET http://localhost:8080/api/books
@@ -53,7 +69,7 @@ GET http://localhost:8080/api/books?sort=publicationYear,desc
 
 
 ### Update a book, fixing the author name
-PUT http://localhost:8080/api/books/2
+PUT http://localhost:8080/api/books/4
 Content-Type: application/json
 
 {
@@ -77,3 +93,34 @@ DELETE http://localhost:8080/api/books/5
 
 ### Delete a book that does not exist
 DELETE http://localhost:8080/api/books/999
+
+
+### Reject a book with a blank title
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "   ",
+  "author": "James Clear",
+  "publicationYear": 2018
+}
+
+### Reject a mistyped publication year
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Atomic Habits",
+  "author": "James Clear",
+  "publicationYear": 20018
+}
+
+### Reject several problems at once
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "",
+  "author": "",
+  "publicationYear": null
+}
