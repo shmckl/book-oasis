@@ -1,0 +1,15 @@
+### Create a book
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Atomic Habits",
+  "author": "James Clear",
+  "publicationYear": 2018
+}
+
+### Get a book by id
+GET http://localhost:8080/api/books/1
+
+### Get a book that does not exist
+GET http://localhost:8080/api/books/999
