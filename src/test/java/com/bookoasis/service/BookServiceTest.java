@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class BookServiceTest {
@@ -90,5 +90,50 @@ class BookServiceTest {
         assertThat(result.totalPages()).isEqualTo(3);
         assertThat(result.first()).isTrue();
         assertThat(result.last()).isFalse();
+    }
+
+    @Test
+    void updatesAnExistingBook() {
+        BookEntity entity = new BookEntity("Clean Code", "Robert Martin", 2008);
+        ReflectionTestUtils.setField(entity, "id", 1L);
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(bookRepository.save(any(BookEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Optional<BookResponse> result = bookService.update(
+                1L, new BookRequest("Clean Code", "Robert C. Martin", 2008));
+
+        assertThat(result).isPresent();
+        assertThat(result.get().author()).isEqualTo("Robert C. Martin");
+        assertThat(entity.getAuthor()).isEqualTo("Robert C. Martin");
+    }
+
+    @Test
+    void returnsEmptyWhenUpdatingABookThatDoesNotExist() {
+        when(bookRepository.findById(999L)).thenReturn(Optional.empty());
+
+        Optional<BookResponse> result = bookService.update(
+                999L, new BookRequest("Nothing", "Nobody", 2000));
+
+        assertThat(result).isEmpty();
+        verify(bookRepository, never()).save(any(BookEntity.class));
+    }
+
+    @Test
+    void deletesAnExistingBook() {
+        when(bookRepository.existsById(1L)).thenReturn(true);
+
+        assertThat(bookService.delete(1L)).isTrue();
+
+        verify(bookRepository).deleteById(1L);
+    }
+
+    @Test
+    void doesNotDeleteABookThatDoesNotExist() {
+        when(bookRepository.existsById(999L)).thenReturn(false);
+
+        assertThat(bookService.delete(999L)).isFalse();
+
+        verify(bookRepository, never()).deleteById(anyLong());
     }
 }

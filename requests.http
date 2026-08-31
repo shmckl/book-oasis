@@ -33,6 +33,12 @@ Content-Type: application/json
 
 { "title": "Clean Code", "author": "Robert Martin", "publicationYear": 2008 }
 
+### Another
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{ "title": "Design Patterns", "author": "Erich Gamma", "publicationYear": 1994 }
+
 ### List all books, default paging
 GET http://localhost:8080/api/books
 
@@ -44,3 +50,30 @@ GET http://localhost:8080/api/books?page=1&size=2
 
 ### Sorted by publication year, newest first
 GET http://localhost:8080/api/books?sort=publicationYear,desc
+
+
+### Update a book, fixing the author name
+PUT http://localhost:8080/api/books/2
+Content-Type: application/json
+
+{
+  "title": "Clean Code",
+  "author": "Robert C. Martin",
+  "publicationYear": 2008
+}
+
+### Update a book that does not exist
+PUT http://localhost:8080/api/books/999
+Content-Type: application/json
+
+{
+  "title": "Nothing",
+  "author": "Nobody",
+  "publicationYear": 2000
+}
+
+### Delete a book
+DELETE http://localhost:8080/api/books/5
+
+### Delete a book that does not exist
+DELETE http://localhost:8080/api/books/999

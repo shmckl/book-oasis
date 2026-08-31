@@ -39,4 +39,24 @@ public class BookService {
     public PagedResponse<BookResponse> findAll(Pageable pageable) {
         return PagedResponse.from(bookRepository.findAll(pageable), BookResponse::from);
     }
+
+    @Transactional
+    public Optional<BookResponse> update(Long id, BookRequest request) {
+        return bookRepository.findById(id)
+                .map(entity -> {
+                    entity.setTitle(request.title());
+                    entity.setAuthor(request.author());
+                    entity.setPublicationYear(request.publicationYear());
+                    return BookResponse.from(bookRepository.save(entity));
+                });
+    }
+
+    @Transactional
+    public boolean delete(Long id) {
+        if (!bookRepository.existsById(id)) {
+            return false;
+        }
+        bookRepository.deleteById(id);
+        return true;
+    }
 }

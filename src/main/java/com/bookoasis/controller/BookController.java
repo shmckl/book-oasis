@@ -7,12 +7,7 @@ import com.bookoasis.service.BookService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 
@@ -45,5 +40,20 @@ public class BookController {
     public ResponseEntity<PagedResponse<BookResponse>> getAll(
             @PageableDefault(size = 10, sort = "title") Pageable pageable) {
         return ResponseEntity.ok(bookService.findAll(pageable));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BookResponse> update(@PathVariable Long id,
+                                               @RequestBody BookRequest request) {
+        return bookService.update(id, request)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        return bookService.delete(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }
