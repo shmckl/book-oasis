@@ -1,4 +1,4 @@
-package com.bookoasis.book_oasis;
+package com.bookoasis;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
