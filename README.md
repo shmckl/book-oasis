@@ -127,22 +127,35 @@ without a Spring context.
 first time on any machine. Data does not survive a restart, which is fine
 for review purposes.
 
+**A test pyramid rather than one style.** Fast isolated tests cover logic and
+edge cases; a single full-stack test proves the layers fit together. Mocking
+everywhere would hide seams between layers, and integration tests everywhere
+would be slow and hard to diagnose.
+
 ## Testing
 
-- `BookRepositoryTest` uses `@DataJpaTest` to verify the JPA mapping against a real database.
-- `BookServiceTest` uses Mockito to cover the business logic, including the not-found paths.
-- `BookControllerTest` uses `@WebMvcTest` to verify status codes, headers, JSON shape
-  and that invalid requests never reach the service.
+Four levels, each with a different job:
+
+- `BookRepositoryTest` (`@DataJpaTest`) verifies the JPA mapping against a real database.
+- `BookServiceTest` (Mockito, no Spring context) covers the business logic including
+  the not-found paths.
+- `BookControllerTest` (`@WebMvcTest`) verifies status codes, headers, JSON shape and
+  that invalid requests never reach the service.
+- `BookOasisIntegrationTest` (`@SpringBootTest`) runs the full add, retrieve, amend and
+  remove cycle through the real stack with nothing mocked, plus pagination and
+  validation, to prove the layers fit together.
+
+The integration test drives each step from the `Location` header returned by the
+create call rather than a hardcoded id, so it works against real generated
+identifiers. It uses `MockMvc` rather than a live server on a random port, which
+keeps it fast while still exercising the whole application.
 
 ## What I would do next
 
 Given more time, in this order:
 
-1. **A full integration test** with `@SpringBootTest` running a create, read,
-   update and delete cycle through the whole stack, to prove the layers work
-   together rather than only in isolation.
-2. **Flyway migrations** instead of `hibernate.ddl-auto`, so schema changes
+1. **Flyway migrations** instead of `hibernate.ddl-auto`, so schema changes
    are versioned and reviewable.
-3. **Search and filtering** on the listing endpoint, by author or title, which
+2. **Search and filtering** on the listing endpoint, by author or title, which
    is the natural next thing a bookshop owner asks for.
-4. **A persistent database** and container packaging for real deployment.
+3. **A persistent database** and container packaging for real deployment.
